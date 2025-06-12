@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  dev-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: mydatabase
+    ports:
+      - '5434:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - yuheng305
+
+networks:
+  yuheng305:
+
+volumes:
+  db_data:

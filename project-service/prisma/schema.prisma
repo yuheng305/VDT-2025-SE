@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  displayName String
+  email        String   @unique
+  role         String?
+  taskAssignments TaskAssignment[]
+  projectsLed  Project[] @relation("LeaderProjects") // Quan hệ ngược cho leader
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project_name String
+  project_description String?
+  start_date  DateTime
+  end_date    DateTime
+  leader_id   Int
+  tasks       Task[]
+  leader      Employee? @relation("LeaderProjects", fields: [leader_id], references: [id])
+}
+
+model Task {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  task_name    String
+  start_date   DateTime
+  end_date     DateTime
+  project_id   Int
+  progress     Float?   @default(0)
+  project      Project  @relation(fields: [project_id], references: [id])
+  taskAssignments TaskAssignment[]
+}
+
+model TaskAssignment {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  task_id     Int
+  employee_id Int
+  start_date  DateTime
+  end_date    DateTime
+  estimate_time Float
+  progress    Float
+  status      TaskStatus
+  task        Task     @relation(fields: [task_id], references: [id])
+  employee    Employee @relation(fields: [employee_id], references: [id])
+}
+
+enum TaskStatus {
+  PENDING
+  BEHIND_SCHEDULE
+  IN_PROGRESS
+  COMPLETED
+}
