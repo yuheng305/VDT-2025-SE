@@ -272,8 +272,12 @@ export class TaskAssignmentService {
             },
           },
         },
+        employee: true,
       },
     });
+
+    // Gom task chậm theo projectId
+    const lateTasksByProject: { [key: number]: { projectName: string; tasks: any[] } } = {};
 
     for (const assignment of assignments) {
       let newStatus: TaskStatus = assignment.status;
@@ -289,15 +293,21 @@ export class TaskAssignmentService {
         newStatus = TaskStatus.PENDING;
       }
 
-      // Kiểm tra chậm tiến độ
       let isLate = false;
-      if (endDate < currentDate && assignment.progress < 100) {
-        isLate = true;
-      } else {
+
+      if (assignment.progress >= 100) {
+        continue; // Bỏ qua task đã hoàn thành
+      }
+
+      if (endDate < currentDate) {
+        isLate = true; // Quá hạn
+        newStatus = TaskStatus.BEHIND_SCHEDULE; 
+      } else if (startDate <= currentDate) {
         const timeElapsed = (currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60); // Giờ
-        const expectedProgress = (timeElapsed / assignment.estimate_time) * 100;
+        const expectedProgress = Math.min((timeElapsed / assignment.estimate_time) * 100, 100); // Giới hạn 100%
         if (assignment.progress < expectedProgress - 20) {
-          isLate = true;
+          isLate = true; // Tiến độ chậm
+          newStatus = TaskStatus.BEHIND_SCHEDULE;
         }
       }
 
@@ -309,28 +319,47 @@ export class TaskAssignmentService {
         });
       }
 
-      // Gửi thông báo nếu chậm tiến độ và leader tồn tại
-      if (isLate && assignment.task.project.leader) {
-        const message = {
+      // Gom task chậm
+      if (isLate && assignment.task.project) {
+        const projectId = assignment.task.project.id;
+        if (!lateTasksByProject[projectId]) {
+          lateTasksByProject[projectId] = {
+            projectName: assignment.task.project.project_name,
+            tasks: [],
+          };
+        }
+        lateTasksByProject[projectId].tasks.push({
           taskId: assignment.task_id,
           taskName: assignment.task.task_name,
           projectName: assignment.task.project.project_name,
-          leaderId: assignment.task.project.leader.id,
-          leaderEmail: assignment.task.project.leader.email,
-          // leaderName: assignment.task.project.leader.displayName,
+          employeeName: assignment.employee.displayName,
+          projectId: assignment.task.project.id,
           endDate: assignment.end_date,
           progress: assignment.progress,
           status: newStatus,
           estimateTime: assignment.estimate_time,
+        });
+      }
+    }
+
+    // Gửi message gộp cho mỗi project
+    for (const projectId in lateTasksByProject) {
+      const { projectName, tasks } = lateTasksByProject[projectId];
+      if (tasks.length > 0) {
+        const message = {
+          projectId: parseInt(projectId),
+          projectName,
+          tasks,
         };
+        console.log('Sending late-tasks message:', message);
         await this.rabbitMQService.sendToQueue('late-tasks', message);
       }
     }
   }
 
-  async updateNotificationConfig(leaderId: number, email: string, frequency: string, sendAlert: boolean) {
+  async updateNotificationConfig(projectId: number, email: string, frequency: string, sendAlert: boolean) {
     const config = {
-      leaderId,
+      projectId,
       email,
       frequency,
       sendAlert,

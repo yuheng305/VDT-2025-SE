@@ -27,10 +27,10 @@ export class TaskAssignmentController {
 
     @Post('notification-config')
     async updateNotificationConfig(
-        @Body() body: { leaderId: number; email: string; frequency: string; sendAlert: boolean },
+        @Body() body: { projectId: number; email: string; frequency: string; sendAlert: boolean },
     ) {
         await this.taskAssignmentService.updateNotificationConfig(
-        body.leaderId,
+        body.projectId,
         body.email,
         body.frequency,
         body.sendAlert,

@@ -5,13 +5,14 @@ export class CreateTaskDto {
   @IsNotEmpty()
   task_name: string;
 
+  @IsInt()
+  @IsPositive()
+  project_id: number;
+
   @IsDateString()
   start_date: string;
 
   @IsDateString()
   end_date: string;
 
-  @IsInt()
-  @IsPositive()
-  project_id: number;
 }

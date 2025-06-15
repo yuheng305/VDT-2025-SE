@@ -6,13 +6,14 @@ import { extname } from 'path';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { GoogleAuthGuard } from 'src/auth/utils/Guards';
 import { Response } from 'express';
+import { LateTaskDto } from './dto/late-task.dto';
 
 @Controller('projects')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
   @Get()
-  @UseGuards(GoogleAuthGuard)
+  // @UseGuards(GoogleAuthGuard)
   async findAll() {
     return this.projectService.findAll();
   }
@@ -29,15 +30,13 @@ export class ProjectController {
   }
 
   @Post()
-  @UseGuards(GoogleAuthGuard)
+  // @UseGuards(GoogleAuthGuard)
   async create(@Body() data: CreateProjectDto) {
-    if (!data.project_name || !data.start_date || !data.end_date || !data.leader_id) {
     try {
       return await this.projectService.create(data);
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException(error.message || 'Failed to create project');
     }
-  }
   }
 
   @Post(':projectId/import-tasks')
@@ -90,6 +89,11 @@ export class ProjectController {
       project_id: id,
       task_assignments: project,
     });
+  }
 
-}
+  @Get(':id/late-tasks')
+  // @UseGuards(GoogleAuthGuard)
+  async getLateTasks(@Param('id', ParseIntPipe) id: number): Promise<LateTaskDto[]> {
+    return this.projectService.getLateTasks(id);
+  }
 }

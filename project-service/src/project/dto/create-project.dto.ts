@@ -11,7 +11,10 @@ export class CreateProjectDto {
   @IsDateString()
   end_date: string;
 
-  @IsInt()
-  @IsPositive()
-  leader_id: number;
+  @IsString()
+  @IsNotEmpty()
+  leader_email: string;
+
+  @IsString()
+  project_description?: string;
 }
