@@ -1,13 +1,20 @@
 version: "3.8"
+
 services:
   project-service:
     build:
-      context: ./backend
+      context: ./project-service
     ports:
-      - "3001:3000"
+      - "3001:3001"
     environment:
       - DATABASE_URL=${DATABASE_URL_PROJECT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - BASE_URL=${BASE_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       - rabbitmq
       - dev-db
@@ -18,9 +25,10 @@ services:
     build:
       context: ./notification-service
     environment:
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=${RABBITMQ_URL}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
+      - REDIS_URL=${REDIS_URL}
     depends_on:
       - rabbitmq
     networks:
